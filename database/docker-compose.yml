@@ -1,0 +1,22 @@
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: focototal-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: focototal
+      POSTGRES_USER: focototal_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - focototal_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U focototal_user -d focototal"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  focototal_postgres_data:
