@@ -1,0 +1,124 @@
+// Configura o Prisma Client, que permite ao backend acessar o banco de dados.
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+// Define o PostgreSQL como banco de dados.
+datasource db {
+  provider = "postgresql"
+}
+
+// Representa os usuários cadastrados no FocoTotal.
+model User {
+  // Identificador único do usuário, gerado automaticamente.
+  id        Int      @id @default(autoincrement())
+
+  // Nome do usuário.
+  name      String
+
+  // E-mail do usuário, que não pode se repetir.
+  email     String   @unique
+
+  // Senha armazenada como hash, nunca em texto puro.
+  password  String
+
+  // Data e hora em que o cadastro foi criado.
+  createdAt DateTime @default(now())
+
+  // Tarefas pertencentes a este usuário.
+  tasks     Task[]
+
+  // Configurações de foco deste usuário.
+  focusSettings FocusSettings?
+
+  // Aplicativos que este usuário deseja bloquear.
+  blockedApps BlockedApp[]
+}
+
+// Representa uma tarefa cadastrada no aplicativo.
+model Task {
+  // Identificador único da tarefa.
+  id          Int      @id @default(autoincrement())
+
+  // Título da tarefa.
+  title       String
+
+  // Descrição opcional da tarefa.
+  description String?
+
+  // Data para a qual a tarefa foi planejada.
+  scheduledFor DateTime
+
+  // Indica se a tarefa é obrigatória.
+  isMandatory Boolean  @default(true)
+
+  // Data e hora em que a tarefa foi criada.
+  createdAt   DateTime @default(now())
+
+  // Identificador do usuário proprietário da tarefa.
+  userId      Int
+
+  // Relacionamento entre a tarefa e seu usuário.
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Registros de conclusão relacionados a esta tarefa.
+  completions TaskCompletion[]
+}
+
+// Registra a conclusão de uma tarefa em uma data específica.
+model TaskCompletion {
+  // Identificador único do registro.
+  id          Int      @id @default(autoincrement())
+
+  // Data e hora em que a tarefa foi concluída.
+  completedAt DateTime @default(now())
+
+  // Identificador da tarefa concluída.
+  taskId      Int
+
+  // Relacionamento com a tarefa correspondente.
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  // Evita registrar mais de uma conclusão para a mesma tarefa no mesmo instante.
+  @@unique([taskId, completedAt])
+}
+
+// Armazena as configurações de foco de cada usuário.
+model FocusSettings {
+  // Identificador único das configurações.
+  id                 Int     @id @default(autoincrement())
+
+  // Indica se o recurso de foco está ativado.
+  isEnabled          Boolean @default(true)
+
+  // Identificador do usuário dono das configurações.
+  userId             Int     @unique
+
+  // Relacionamento com o usuário.
+  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Registra os aplicativos que o usuário deseja bloquear.
+model BlockedApp {
+  // Identificador único do registro.
+  id        Int      @id @default(autoincrement())
+
+  // Nome do aplicativo selecionado.
+  appName   String
+
+  // Identificador técnico do aplicativo, quando disponível.
+  appIdentifier String
+
+  // Indica se o bloqueio deste aplicativo está ativado.
+  isEnabled Boolean  @default(true)
+
+  // Identificador do usuário proprietário desta configuração.
+  userId    Int
+
+  // Relacionamento com o usuário.
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Evita cadastrar o mesmo aplicativo duas vezes para o mesmo usuário.
+  @@unique([userId, appIdentifier])
+}
