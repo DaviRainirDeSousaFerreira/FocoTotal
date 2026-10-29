@@ -3,3 +3,9 @@
 node_modules/
 dist/
 .expo/
+
+# Instruções auxiliares de ferramentas de desenvolvimento
+/backend/.agents/
+/backend/.claude/
+/backend/.cursor/
+/backend/.devin/
