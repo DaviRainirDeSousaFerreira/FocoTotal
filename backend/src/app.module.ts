@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { TasksModule } from './tasks/tasks.module';
 import { FocusSettingsModule } from './focus-settings/focus-settings.module';
 import { BlockedAppsModule } from './blocked-apps/blocked-apps.module';
+import { BlockingStatusModule } from './blocking-status/blocking-status.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { BlockedAppsModule } from './blocked-apps/blocked-apps.module';
     TasksModule,
     FocusSettingsModule,
     BlockedAppsModule,
+    BlockingStatusModule,
   ],
   controllers: [AppController],
   providers: [AppService],
