@@ -151,7 +151,8 @@ export default function HomeScreen({ token }) {
 
   // Fecha o modal sem salvar
   function cancelarEdicao() {
-    setModalVisorSeguro(false);
+    setModalVisivel(false);
+    setModoSeletor(null);
   }
 
   // Exclui uma tarefa
@@ -188,6 +189,18 @@ export default function HomeScreen({ token }) {
       carregarTarefas();
     } catch (erro) {
       Alert.alert("Erro", "Não foi possível concluir a tarefa.");
+    }
+  }
+
+  // Desfaz a conclusão de uma tarefa, retornando-a ao estado pendente
+  async function desfazerConclusaoTarefa(id) {
+    try {
+      await api.patch(`/tasks/${id}/uncomplete`, {}, cabecalho);
+
+      // Atualiza a lista de tarefas após desfazer a conclusão
+      carregarTarefas();
+    } catch (erro) {
+      Alert.alert("Erro", "Não foi possível retornar a tarefa para pendente.");
     }
   }
 
@@ -262,7 +275,16 @@ export default function HomeScreen({ token }) {
             </TouchableOpacity>
           </View>
 
-          {!item.isCompleted && (
+          {item.isCompleted ? (
+            // Se a tarefa estiver concluída, permite retornar ao estado pendente
+            <TouchableOpacity
+              style={styles.botaoDesfazer}
+              onPress={() => desfazerConclusaoTarefa(item.id)}
+            >
+              <Text style={styles.textoBotao}>Desfazer conclusão</Text>
+            </TouchableOpacity>
+          ) : (
+            // Se a tarefa estiver pendente, permite concluí-la
             <TouchableOpacity
               style={styles.botaoConcluir}
               onPress={() => concluirTarefa(item.id)}
@@ -597,6 +619,14 @@ const styles = StyleSheet.create({
 
   botaoConcluir: {
     backgroundColor: "#16A34A",
+    padding: 10,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 10,
+  },
+
+  botaoDesfazer: {
+    backgroundColor: "#D97706",
     padding: 10,
     borderRadius: 8,
     alignItems: "center",

@@ -1,0 +1,6 @@
+<resources>
+  <string name="app_name">FocoTotal</string>
+  <string name="accessibility_service_label">FocoTotal - Bloqueio de aplicativos</string>
+  <string name="accessibility_service_description">Identifica a abertura de aplicativos selecionados
+    para aplicar o bloqueio durante o modo foco.</string>
+</resources>
