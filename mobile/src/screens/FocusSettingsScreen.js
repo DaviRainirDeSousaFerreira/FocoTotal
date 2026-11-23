@@ -338,10 +338,6 @@ export default function FocusSettingsScreen({ token }) {
           <>
             <Text style={styles.titulo}>Configurações do foco</Text>
 
-            <Text style={{ color: "red", fontSize: 18 }}>
-              TESTE DA TELA ATUALIZADA
-            </Text>
-
             <View style={styles.cardFoco}>
               <View style={styles.linhaFoco}>
                 <View style={styles.dadosAplicativo}>
