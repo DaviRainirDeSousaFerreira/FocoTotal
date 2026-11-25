@@ -12,12 +12,15 @@ import {
   Platform,
   Modal,
   ScrollView,
+  NativeModules,
 } from "react-native";
 
 import DateTimePicker from "@react-native-community/datetimepicker";
 import api from "../services/api";
 
 export default function HomeScreen({ token }) {
+  const { BlockingModule } = NativeModules;
+
   const [tarefas, setTarefas] = useState([]);
 
   // Campos para cadastrar uma nova tarefa
@@ -47,6 +50,30 @@ export default function HomeScreen({ token }) {
       Authorization: `Bearer ${token}`,
     },
   };
+
+  // Atualiza o estado do bloqueio no Android após alterações nas tarefas.
+  async function sincronizarBloqueio() {
+    if (Platform.OS !== "android" || !BlockingModule) {
+      return;
+    }
+
+    // Consulta o estado atualizado do bloqueio e os aplicativos cadastrados.
+    const [respostaBloqueio, respostaApps] = await Promise.all([
+      api.get("/blocking-status", cabecalho),
+      api.get("/blocked-apps", cabecalho),
+    ]);
+
+    // Obtém somente os aplicativos habilitados.
+    const aplicativosAtivos = respostaApps.data
+      .filter((app) => app.isEnabled)
+      .map((app) => app.appIdentifier);
+
+    // Envia o estado atualizado para o módulo nativo.
+    await BlockingModule.updateBlockingData(
+      respostaBloqueio.data.shouldBlock,
+      aplicativosAtivos,
+    );
+  }
 
   // Busca as tarefas cadastradas
   async function carregarTarefas() {
@@ -86,7 +113,18 @@ export default function HomeScreen({ token }) {
 
       Alert.alert("Sucesso", "Tarefa cadastrada!");
 
-      carregarTarefas();
+      await carregarTarefas();
+
+      try {
+        await sincronizarBloqueio();
+      } catch (erro) {
+        console.error("Erro ao sincronizar bloqueio:", erro);
+
+        Alert.alert(
+          "Atenção",
+          "Tarefa cadastrada, mas não foi possível atualizar o bloqueio.",
+        );
+      }
     } catch (erro) {
       const mensagem = erro.response?.data?.message;
 
@@ -136,7 +174,18 @@ export default function HomeScreen({ token }) {
 
       Alert.alert("Sucesso", "Tarefa atualizada!");
 
-      carregarTarefas();
+      await carregarTarefas();
+
+      try {
+        await sincronizarBloqueio();
+      } catch (erro) {
+        console.error("Erro ao sincronizar bloqueio:", erro);
+
+        Alert.alert(
+          "Atenção",
+          "Tarefa atualizada, mas não foi possível atualizar o bloqueio.",
+        );
+      }
     } catch (erro) {
       const mensagem = erro.response?.data?.message;
 
@@ -172,7 +221,18 @@ export default function HomeScreen({ token }) {
             try {
               await api.delete(`/tasks/${id}`, cabecalho);
 
-              carregarTarefas();
+              await carregarTarefas();
+
+              try {
+                await sincronizarBloqueio();
+              } catch (erro) {
+                console.error("Erro ao sincronizar bloqueio:", erro);
+
+                Alert.alert(
+                  "Atenção",
+                  "Tarefa excluída, mas não foi possível atualizar o bloqueio.",
+                );
+              }
             } catch (erro) {
               Alert.alert("Erro", "Não foi possível excluir a tarefa.");
             }
@@ -182,23 +242,42 @@ export default function HomeScreen({ token }) {
     );
   }
 
-  // Marca uma tarefa como concluída
+  // Marca uma tarefa como concluída.
   async function concluirTarefa(id) {
     try {
       await api.patch(`/tasks/${id}/complete`, {}, cabecalho);
-      carregarTarefas();
+
+      await carregarTarefas();
+
+      try {
+        await sincronizarBloqueio();
+      } catch (erro) {
+        console.error("Erro ao sincronizar bloqueio:", erro);
+
+        Alert.alert(
+          "Atenção",
+          "Tarefa concluída, mas não foi possível atualizar o bloqueio.",
+        );
+      }
     } catch (erro) {
       Alert.alert("Erro", "Não foi possível concluir a tarefa.");
     }
   }
 
-  // Desfaz a conclusão de uma tarefa, retornando-a ao estado pendente
+  // Desfaz a conclusão de uma tarefa.
   async function desfazerConclusaoTarefa(id) {
     try {
       await api.patch(`/tasks/${id}/uncomplete`, {}, cabecalho);
 
-      // Atualiza a lista de tarefas após desfazer a conclusão
-      carregarTarefas();
+      await carregarTarefas();
+
+      try {
+        await sincronizarBloqueio();
+      } catch (erro) {
+        console.error("Erro ao sincronizar bloqueio:", erro);
+
+        Alert.alert("Atenção", "Não foi possível atualizar o bloqueio.");
+      }
     } catch (erro) {
       Alert.alert("Erro", "Não foi possível retornar a tarefa para pendente.");
     }
